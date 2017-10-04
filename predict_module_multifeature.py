@@ -28,7 +28,6 @@ def forecast_multifeather(bld_name, load_weekday, n_train, n_lag, Temp_weekday, 
     # (5) day period
     
     for curr_day in range(n_train + n_lag, n_days-1):
-        print(curr_day)
         # build training data
         y_train = np.zeros((n_train, T))
         X_train = np.zeros((n_train, 5 * T * n_lag))
@@ -99,7 +98,6 @@ def forecast_multifeather(bld_name, load_weekday, n_train, n_lag, Temp_weekday, 
         RMSPE_lr = predict_util.calRMSPE(y_test, y_lr)
         RMSPE_sum_lr += RMSPE_lr
         
-        print(MAPE_nn, RMSPE_nn, MAPE_rf, RMSPE_rf, MAPE_lr, RMSPE_lr)
     
     days_sample = n_days - 1 - n_train - n_lag
     
@@ -110,24 +108,11 @@ def forecast_multifeather(bld_name, load_weekday, n_train, n_lag, Temp_weekday, 
     MAPE_avg_lr = MAPE_sum_lr / days_sample
     RMSPE_avg_lr = RMSPE_sum_lr / days_sample   
     
-    print(MAPE_avg_nn, RMSPE_avg_nn, MAPE_avg_rf, RMSPE_avg_rf, MAPE_avg_lr, RMSPE_avg_lr)
     return (MAPE_avg_nn, RMSPE_avg_nn, MAPE_avg_rf, RMSPE_avg_rf, MAPE_avg_lr, RMSPE_avg_lr)
 
     
-if __name__ == "__main__":
-    bld_name = 'combined/1195_Hec_Ed'
-    (Temp_weekday, Huminity_weekday, WindSpeed_weekday, Day_period) = load_weather.getWeatherData(bld_name)
-    load_weekday = getWeekday.getWeekdayload(bld_name)
+if __name__ == "__main__": 
     
-    T = 96
-    # number of days in training set    
-    n_train = 50
-    # number of lags
-    n_lag = 5
-    
-    (MAPE_avg_nn, RMSPE_avg_nn, MAPE_avg_rf, RMSPE_avg_rf, MAPE_avg_lr, RMSPE_avg_lr) = forecast_multifeather(bld_name, load_weekday, n_train, n_lag, Temp_weekday, Huminity_weekday, WindSpeed_weekday, Day_period)
-    
-    '''
     bld_names = ['combined/1008_EE_CSE', 'combined/1108_Chem', 'combined/1111_Fluke', 'combined/1126_Meany', 'combined/1143_McMahon', 'combined/1147_Haggett', 'combined/1158_McCarty', 'combined/1163_Port_Bay', 'combined/1195_Hec_Ed', 'combined/1201_Gowen', 'combined/1275_Pool', 'combined/1306_Physics', 'combined/1316_BAEEC', 'combined/1357_Fish_Sc', 'combined/4057_Foege']
     T = 96;
     # number of days in training set    
@@ -144,8 +129,10 @@ if __name__ == "__main__":
     
 
     for bld_name in bld_names:
+        print(bld_name)
         load_weekday = getWeekday.getWeekdayload(bld_name)
-        (MAPE_avg_nn, RMSPE_avg_nn, MAPE_avg_rf, RMSPE_avg_rf, MAPE_avg_lr, RMSPE_avg_lr) = forecast(bld_name, load_weekday, n_train, n_lag)
+        (Temp_weekday, Huminity_weekday, WindSpeed_weekday, Day_period) = load_weather.getWeatherData(bld_name)
+        (MAPE_avg_nn, RMSPE_avg_nn, MAPE_avg_rf, RMSPE_avg_rf, MAPE_avg_lr, RMSPE_avg_lr) = forecast_multifeather(bld_name, load_weekday, n_train, n_lag, Temp_weekday, Huminity_weekday, WindSpeed_weekday, Day_period)
         nn_MAPE.append(MAPE_avg_nn)
         nn_RMSPE.append(RMSPE_avg_nn)
         rf_MPAE.append(MAPE_avg_rf)
@@ -155,5 +142,5 @@ if __name__ == "__main__":
         
     d = dict({'bld_name' : bld_names, 'nn_MAPE' : nn_MAPE, 'nn_RMSPE' : nn_RMSPE, 'rf_MPAE' : rf_MPAE, 'rf_RMSPE' : rf_RMSPE, 'lr_MAPE' : lr_MAPE, 'lr_RMSPE' : lr_RMSPE})
     df = pd.DataFrame(d)    
-    df.to_csv('benchmark_forecast_results.csv', sep=',', index = False)
-    '''
+    df.to_csv('result\multifeature_forecast_results.csv', sep=',', index = False)
+    
