@@ -22,8 +22,9 @@ def getS(t_series, h, N):
     
     return S
 
-def load_correction(loads, d, Td, S, coef):
+def load_correction(loads, d, Td, S, coef, figure_on):
     N = 9 * Td
+    Tp = int(Td * 3 / 4)
     load_test = loads[(d-1)*Td: (d+8)*Td]
     load_max = np.max(load_test)
     load_test = load_test / load_max #normalize data
@@ -48,12 +49,12 @@ def load_correction(loads, d, Td, S, coef):
         
     
     ############################ plot the results #############################
-    
-    plt.figure(figsize=(18,10))
-    plt.plot(xaxis, load_test, 'r')
-    plt.plot(xaxis, load_pred, 'g')
-    plt.plot(xaxis, LB, 'g--')
-    plt.plot(xaxis, UB, 'g--')   
+    if figure_on:
+        plt.figure(figsize=(18,10))
+        plt.plot(xaxis, load_test, 'r')
+        plt.plot(xaxis, load_pred, 'g')
+        plt.plot(xaxis, LB, 'g--')
+        plt.plot(xaxis, UB, 'g--')   
     
     part_day = int(Td / 4) # one fourth of day as threshold
     for i in range(part_day,N- part_day):
@@ -61,14 +62,17 @@ def load_correction(loads, d, Td, S, coef):
             #print(i)
             load_test[i] = load_pred[i]
     
-    plt.plot(xaxis, load_test, 'y')
-    plt.show()
+    if figure_on:
+        plt.plot(xaxis, load_test, 'y')
+        plt.show()
     
     load_test = load_test * load_max
-    return load_test[Td:Td*8]
+    return load_test[Td-Tp:Td*8+Tp]
     
+
 def Kernel_clean(bld_name):    
     Td = 96
+    Tp = int(Td * 3 / 4)
     # duration : a week, 96 * (7+2) data points
     N = Td * 9
     # t series
@@ -89,25 +93,27 @@ def Kernel_clean(bld_name):
     data_cleaned = loads
     d = 1
     while(d * Td + 8*Td <= loads.size):
-        data_cleaned[d*Td:(d+7)*Td] = load_correction(loads, d, Td, S, coef1)
+        data_cleaned[d*Td-Tp:(d+7)*Td+Tp] = load_correction(loads, d, Td, S, coef1)
         d += 7   
     
     d = int(loads.size/Td - 8)
-    data_cleaned[d*Td:(d+7)*Td] = load_correction(loads, d, Td, S, coef1)
+    data_cleaned[d*Td-Tp:(d+7)*Td+Tp] = load_correction(loads, d, Td, S, coef1)
     
     print('second time cleaning')
+    
+    
     # 2nd time Kernel filtering
     loads = data_cleaned
     coef2 = 2.5
     d = 1
     while(d * Td + 8*Td <= loads.size):
-        data_cleaned[d*Td:(d+7)*Td] = load_correction(loads, d, Td, S, coef2)
+        data_cleaned[d*Td-Tp:(d+7)*Td+Tp] = load_correction(loads, d, Td, S, coef2)
         d += 7   
     
     d = int(loads.size/Td - 8)
-    data_cleaned[d*Td:(d+7)*Td] = load_correction(loads, d, Td, S, coef2)    
+    data_cleaned[d*Td-Tp:(d+7)*Td+Tp] = load_correction(loads, d, Td, S, coef2)    
     
-    
+    # write filtered data to .csv file
     dt = dict({'date-time' : timestamp, 'load' : data_cleaned})
     df = pd.DataFrame(dt)    
     df.to_csv('filtered/' + bld_name + '.csv', sep=',', index = False)
