@@ -11,7 +11,7 @@ def BuildTimeMap(bld_name):
     # time(integer) to load (kW) map
     load_map = dict()
     # read the .csv file
-    loads_list = pd.read_csv('energy/' + bld_name + '.csv', sep = ',')
+    loads_list = pd.read_csv('parsed/' + bld_name + '.csv', sep = ',')
     N_lines = len(loads_list.index) 
     last_load = -1.0 # load of last effective entry
     last_time = -1 # time of last effective entry
@@ -123,8 +123,8 @@ def GenkWLoad(bld_name, start_time, end_time, figure_on):
                 kW_load.append(kW_load[-96])
     
     # figure
+    new_time = new_time[1:]
     if figure_on:
-        new_time = new_time[1:]
         plt.figure(figsize=(18,12))
         plt.plot(new_time, kW_load)
         plt.show()  
@@ -141,7 +141,7 @@ def GenkWLoad(bld_name, start_time, end_time, figure_on):
 
     
 def get_StartTime(bld_name):
-    loads_list = pd.read_csv('energy/' + bld_name + '.csv', sep = ',')
+    loads_list = pd.read_csv('parsed/' + bld_name + '.csv', sep = ',')
     first_time = loads_list.iloc[0, 0]
     d = datetime.datetime.strptime(first_time, '%Y-%m-%dT%H:%M:%S')
     month_d = {1:31, 2:28, 3:31, 4:30, 5:31, 6:30, 7:31, 8:31, 9:30, 10:31, 11:30, 12:31};
@@ -154,7 +154,7 @@ def get_StartTime(bld_name):
 
 
 def get_EndTime(bld_name):
-    loads_list = pd.read_csv('energy/' + bld_name + '.csv', sep = ',')
+    loads_list = pd.read_csv('parsed/' + bld_name + '.csv', sep = ',')
     N_lines = len(loads_list.index)
     last_time = loads_list.iloc[N_lines-1, 0]
     d = datetime.datetime.strptime(last_time, '%Y-%m-%dT%H:%M:%S')

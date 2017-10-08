@@ -99,7 +99,7 @@ def Kernel_clean(bld_name, figure_on):
     d = int(loads.size/Td - 8)
     data_cleaned[d*Td-Tp:(d+7)*Td+Tp] = load_correction(loads, d, Td, S, coef1, figure_on)
     
-    print('second time cleaning')
+    #print('second time cleaning')
     
     
     # 2nd time Kernel filtering
