@@ -166,7 +166,7 @@ def get_EndTime(bld_name):
 if __name__ == "__main__":
     ############# inputs #####################
     # bulding name
-    bld_name = '1008_EE_CSE_WA3_accum'
+    bld_name = '1008_EE_CSE_WB3_accum'
     # select the data range
     start_time = get_StartTime(bld_name) 
     # start_time = '2014-12-01T00:00:00'    
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     GenkWLoad(bld_name, start_time, end_time, figure_on)
     
     print('Filtering abnormal data...')
-    outlier.Kernel_clean(bld_name)
+    outlier.Kernel_clean(bld_name, figure_on)
     
     
 
