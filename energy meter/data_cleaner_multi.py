@@ -4,7 +4,7 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import interpolate
-
+import outlier
 
 
 def BuildTimeMap(bld_name):
@@ -27,14 +27,14 @@ def BuildTimeMap(bld_name):
             # redundent data points
             if t_load in load_map.keys():
                 continue
-                        
-            # missing entry
-            elif loads_list.iloc[i, 1] == 'None':
-                continue
             
             # abnormal data (too large)
-            elif float(loads_list.iloc[i, 1]) > 1000000.0:
+            if float(loads_list.iloc[i, 1]) > 1000000.0:
                 continue
+            
+            # missing entry, use the last one 
+            elif loads_list.iloc[i, 1] == 'None':
+                load_map[t_load] = last_load
             
             # meter stuck, current reading equals last reading
             elif float(loads_list.iloc[i, 1]) + load_base == last_load:

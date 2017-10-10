@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+import datetime
+import time
 import matplotlib.pyplot as plt
 
 def Kern(t, ti, h):
@@ -70,7 +72,52 @@ def load_correction(loads, d, Td, S, coef, figure_on):
     return load_test[Td-Tp:Td*8+Tp]
     
 
-def Kernel_clean(bld_name, figure_on):    
+def Prepare_load(bld_names):
+    if len(bld_names) == 1:
+        data = pd.read_csv('cleaned/' + bld_names[0] + '_cleaned.csv')
+        timestamp = data['date-time'].values  
+        loads = np.asarray(data['load'].values)      
+        return(timestamp, loads) 
+        
+    t_start = 0
+    t_end = 999999999999999
+    
+    for bld_name in bld_names:
+        data = pd.read_csv('cleaned/' + bld_name + '_cleaned.csv')
+        timestamp = data['date-time'].values    
+        time_start = timestamp[0]
+        time_end = timestamp[-1]
+        d_start = datetime.datetime.strptime(time_start, '%Y-%m-%d %H:%M:%S')
+        d_end = datetime.datetime.strptime(time_end, '%Y-%m-%d %H:%M:%S')
+        t_start = max(t_start, int(time.mktime(d_start.timetuple())))
+        t_end = min(t_end, int(time.mktime(d_end.timetuple())))
+    
+    ds = datetime.datetime.fromtimestamp(t_start)
+    de = datetime.datetime.fromtimestamp(t_end)
+    
+    str_start = str(ds)
+    str_end = str(de)
+    
+    load_size = int((t_end - t_start) / 900) + 1
+    loads = np.zeros((load_size))
+    for bld_name in bld_names:
+        data = pd.read_csv('cleaned/' + bld_name + '_cleaned.csv')
+        timestamp = data['date-time'].values  
+        load = np.asarray(data['load'].values)
+        s_idx = np.where(timestamp == str_start)[0][0]
+        e_idx = np.where(timestamp == str_end)[0][0]
+        loads += load[s_idx:e_idx+1]
+        
+    timestamp = []
+    t = t_start
+    while t < t_end+1:
+        timestamp.append(datetime.datetime.fromtimestamp(t))
+        t += 900
+    
+    return(timestamp, loads)
+    
+    
+def Kernel_clean(bld_names, figure_on):    
     Td = 96
     Tp = int(Td * 3 / 4)
     # duration : a week, 96 * (7+2) data points
@@ -83,14 +130,12 @@ def Kernel_clean(bld_name, figure_on):
     # calculate S
     S = getS(t_series, h, N)
             
-    # 1st time Kernel filtering
-    coef1 = 3 # coefficient of condifence interval
-    # import the load data
-    data = pd.read_csv('cleaned/' + bld_name + '_cleaned.csv')
-    loads = data['load'].values
-    timestamp = data['date-time'].values
-
+    # prepare the load data
+    (timestamp, loads) = Prepare_load(bld_names)
+    
+    # 1st time Kernel filtering    
     data_cleaned = loads
+    coef1 = 3 # coefficient of condifence interval
     d = 1
     while(d * Td + 8*Td <= loads.size):
         data_cleaned[d*Td-Tp:(d+7)*Td+Tp] = load_correction(loads, d, Td, S, coef1, figure_on)
@@ -98,8 +143,6 @@ def Kernel_clean(bld_name, figure_on):
     
     d = int(loads.size/Td - 8)
     data_cleaned[d*Td-Tp:(d+7)*Td+Tp] = load_correction(loads, d, Td, S, coef1, figure_on)
-    
-    #print('second time cleaning')
     
     
     # 2nd time Kernel filtering
@@ -112,13 +155,29 @@ def Kernel_clean(bld_name, figure_on):
     
     d = int(loads.size/Td - 8)
     data_cleaned[d*Td-Tp:(d+7)*Td+Tp] = load_correction(loads, d, Td, S, coef2, figure_on)    
+
+
+    # 3rd time Kernel filtering
+    loads = data_cleaned
+    coef2 = 2.5
+    d = 1
+    while(d * Td + 8*Td <= loads.size):
+        data_cleaned[d*Td-Tp:(d+7)*Td+Tp] = load_correction(loads, d, Td, S, coef2, figure_on)
+        d += 7   
+    
+    d = int(loads.size/Td - 8)
+    data_cleaned[d*Td-Tp:(d+7)*Td+Tp] = load_correction(loads, d, Td, S, coef2, figure_on) 
     
     # write filtered data to .csv file
     dt = dict({'date-time' : timestamp, 'load' : data_cleaned})
     df = pd.DataFrame(dt)    
-    df.to_csv('filtered/' + bld_name + '.csv', sep=',', index = False)
+    df.to_csv('filtered/' + bld_names[0] + '.csv', sep=',', index = False)
 
-    
 
+'''
+if __name__ == "__main__":
+    bld_names = ['1008_EE_CSE_WA3_accum', '1008_EE_CSE_WB3_accum', '1008_EE_CSE_WC3_accum']
+    Prepare_load(bld_names)
+'''
     
             
