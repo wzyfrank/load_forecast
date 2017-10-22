@@ -125,7 +125,7 @@ def NN_forecast(bld_name, n_train, n_lag, T):
         rmspe = predict_util.calRMSPE(y_test, y_pred)
 
         # update error metric results
-        print('MAPE: %.2f, RMSPE: %.2f' % (mape, rmspe))
+        #print('MAPE: %.2f, RMSPE: %.2f' % (mape, rmspe))
         MAPE_sum += mape
         RMSPR_sum += rmspe
         
