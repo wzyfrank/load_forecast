@@ -74,8 +74,8 @@ def RNN_LSTM(bld_name, curr_day):
     num_input = 1 # MNIST data input (img shape: 28*28)
     T = 96
     num_hidden = 1 # hidden layer num of features
-    n_train = 20
-    n_valid = 5
+    n_train = 5
+    n_valid = 1
     n_lag = 2
     timesteps = T * n_lag # timesteps
     
@@ -122,8 +122,11 @@ def RNN_LSTM(bld_name, curr_day):
     '''
 
     last_loss = 10000.0
-    epsilon = 1e-4
+    epsilon = 1e-5
     step = 0
+    
+
+    
     while(step < training_steps):
 
         X_train = X_train.reshape((n_train, timesteps, num_input))
@@ -151,19 +154,35 @@ def RNN_LSTM(bld_name, curr_day):
     
     mape = predict_util.calMAPE(y_test, y_pred)
     rmspe = predict_util.calRMSPE(y_test, y_pred)
+    
+    '''
     xaxis = range(T)
-    
-    
     plt.step(xaxis, y_pred.flatten(), 'r')
     plt.step(xaxis, y_test.flatten(), 'g')
-    plt.show()   
+    plt.show()  
+    '''
     print('MAPE: %.2f, RMSPE: %.2f' % (mape, rmspe))
     
     tf.reset_default_graph()
-    sess.close()    
+    sess.close()  
+    return (mape, rmspe)
 
 if __name__ == "__main__":
     bld_name = '1008_EE_CSE_WA3_accum'
-    for curr_day in range(100, 500):
+    load_weekday = getWeekday.getWeekdayload(bld_name)
+    T=96
+    n_days = int(load_weekday.size / T)
+    
+    MAPE_sum = 0.0
+    RMSPR_sum = 0.0
+    
+    for curr_day in range(55, n_days-1):
         print(curr_day)
-        RNN_LSTM(bld_name, curr_day)
+        (mape, rmspe) = RNN_LSTM(bld_name, curr_day)
+        MAPE_sum += mape
+        RMSPR_sum += rmspe
+    
+    days_sample = n_days - 1 - 55
+    MAPE_sum = MAPE_sum / days_sample
+    RMSPR_sum = RMSPR_sum / days_sample
+    print('AVERAGE MAPE: %.2f, RMSPE: %.2f' % (MAPE_sum, RMSPR_sum))
