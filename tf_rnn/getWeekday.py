@@ -17,7 +17,7 @@ def getWeekdayload(bld_name):
         #d = datetime.datetime.strptime(timestamp[t], '%Y-%m-%d %H:%M:%S')
         d = datetime.datetime.strptime(timestamp[t], '%m/%d/%Y %H:%M')
         # check whether the date is weekday
-        if d.isoweekday() in range(1, 6):
+        if d.weekday() < 5:
             load_weekday.extend(load[t:t+96])
         t += 96
     

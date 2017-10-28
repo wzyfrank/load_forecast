@@ -68,7 +68,7 @@ def RNN(x, weights, biases, num_hidden, timesteps, layers):
 
 
 
-def RNN_LSTM(bld_name, curr_day):    
+def RNN_LSTM(bld_name):    
     # Training Parameters
     training_steps = 10000
     display_step = 20
@@ -77,9 +77,9 @@ def RNN_LSTM(bld_name, curr_day):
     num_input = 1 # MNIST data input (img shape: 28*28)
     T = 96
     num_hidden = 1 # hidden layer num of features
-    n_train = 20
-    n_valid = 5
-    n_lag = 5
+    n_train = 5
+    n_valid = 1
+    n_lag = 2
     timesteps = T * n_lag # timesteps
     layers = 2
     
@@ -108,12 +108,19 @@ def RNN_LSTM(bld_name, curr_day):
     # Run the initializer
     sess.run(init)
     
-    for curr_day in range(100, 500):
+    load_weekday = getWeekday.getWeekdayload(bld_name)
+    T=96
+    n_days = int(load_weekday.size / T)
+    MAPE_sum = 0.0
+    RMSPR_sum = 0.0
+    
+    for curr_day in range(55, n_days-1):
+        print(curr_day)
         ## get the training, validation, testing datasets
         (X_train, y_train, X_valid, y_valid, X_test, y_test, min_load, max_load) = genData(bld_name, n_train, n_valid, n_lag, T, curr_day)
         
         last_loss = 10000.0
-        epsilon = 1e-4
+        epsilon = 1e-5
         step = 0
         while(step < training_steps):
     
@@ -142,6 +149,8 @@ def RNN_LSTM(bld_name, curr_day):
         
         mape = predict_util.calMAPE(y_test, y_pred)
         rmspe = predict_util.calRMSPE(y_test, y_pred)
+        MAPE_sum += mape
+        RMSPR_sum += rmspe
         
         xaxis = range(T)
         plt.step(xaxis, y_pred.flatten(), 'r')
@@ -153,10 +162,14 @@ def RNN_LSTM(bld_name, curr_day):
     
     
     sess.close()    
+    
+    days_sample = n_days - 1 - 55
+    MAPE_sum = MAPE_sum / days_sample
+    RMSPR_sum = RMSPR_sum / days_sample
+    print('AVERAGE MAPE: %.2f, RMSPE: %.2f' % (MAPE_sum, RMSPR_sum))
 
 
 if __name__ == "__main__":
-    bld_name = '1008_EE_CSE_WA3_accum'
-    for curr_day in range(100, 500):
-        print(curr_day)
-        RNN_LSTM(bld_name, curr_day)
+    #bld_name = '1008_EE_CSE_WA3_accum'
+    bld_name = '1108_Chem_WA3_accum'
+    RNN_LSTM(bld_name)
