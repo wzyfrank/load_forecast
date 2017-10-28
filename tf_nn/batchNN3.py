@@ -54,7 +54,9 @@ def NN_forecast(bld_name, n_train, n_lag, T):
     (prediction, wo, bo) = add_layer(l2, N_neuron, T, None)
     
     # loss function, RMSPE
-    loss = tf.reduce_mean(tf.reduce_sum(tf.square(ys - prediction), reduction_indices=[1]))  
+    #loss = tf.reduce_mean(tf.reduce_sum(tf.square(ys - prediction), 1))  
+    loss = T * tf.reduce_mean(tf.square(ys - prediction) )  
+    
     loss += 1e-2 * ( tf.nn.l2_loss(w1) + tf.nn.l2_loss(b1) + tf.nn.l2_loss(wo) + tf.nn.l2_loss(bo) )
     loss += 1e-2 * ( tf.nn.l2_loss(w2) + tf.nn.l2_loss(b2) )
     
@@ -86,16 +88,17 @@ def NN_forecast(bld_name, n_train, n_lag, T):
             y_train[row,:] = load_weekday[train_day * T : train_day * T + T]
             X_train[row,0*T*n_lag:1*T*n_lag] = load_weekday[train_day * T - n_lag * T: train_day * T]
             row += 1
-            
+		max_load = np.max(X_train)
+        min_load = np.min(X_train)    
+		
         # building test data
         X_test = np.zeros((1, T * n_lag))
         X_test[0, 0*T*n_lag:1*T*n_lag] = load_weekday[curr_day*T - n_lag*T: curr_day*T]
         y_test = load_weekday[curr_day*T: curr_day *T + T]
         
-        X_train = X_train / max_load
-        y_train = y_train / max_load
-        X_test = X_test / max_load
-        y_test = y_test / max_load
+        X_train = (X_train-min_load) / (max_load - min_load)
+        y_train = (y_train-min_load) / (max_load - min_load)
+        X_test = (X_test-min_load) / (max_load - min_load)
                 
 
         # training 
@@ -112,7 +115,7 @@ def NN_forecast(bld_name, n_train, n_lag, T):
         
         #y_ = prediction.eval(session = sess, feed_dict={xs: X_train})
         y_pred = prediction.eval(session = sess, feed_dict={xs: X_test})
-        
+        y_pred = y_pred * (max_load - min_load) + min_load
         # plot daily forecast
         '''
         xaxis = range(T)
@@ -131,6 +134,7 @@ def NN_forecast(bld_name, n_train, n_lag, T):
         
 
     # close session
+    tf.reset_default_graph() # reset the graph 
     sess.close() 
     
 
@@ -168,11 +172,11 @@ if __name__ == "__main__":
         
     d = dict({'bld_name' : bld_names, 'nn_MAPE' : nn_MAPE, 'nn_RMSPE' : nn_RMSPE})
     df = pd.DataFrame(d)    
-    df.to_csv('benchmark_forecast_results.csv', sep=',', index = False)
+    df.to_csv('benchmark_forecast_results2.csv', sep=',', index = False)
     
     
     '''
-    bld_name = '1125_OUGL_accum'
+    bld_name = '1348_NPL_accum'
     print("forecasting building： " + bld_name + "...")
     load_weekday = getWeekday.getWeekdayload(bld_name)
     (MAPE_avg_nn, RMSPE_avg_nn) = NN_forecast(bld_name, n_train, n_lag, T)

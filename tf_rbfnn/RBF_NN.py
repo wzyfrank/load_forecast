@@ -12,7 +12,8 @@ from os import listdir
 def getBldMap():
     bld_names = []
     
-    for file in listdir('F:/OneDrive/Load Forecast/tf_nn/data'):
+    #for file in listdir('F:/OneDrive/Load Forecast/tf_nn/data'):
+    for file in listdir('F:/SkyDrive/Load Forecast/tf_nn/data'):
         bld_name = str(file[:-4])
         bld_names.append(bld_name)
 
@@ -95,21 +96,25 @@ def NN_forecast(bld_name, n_train, n_lag, T):
     for curr_day in range(n_train + n_lag, n_days-1):
         y_train = np.zeros((n_train, T))
         X_train = np.zeros((n_train, T * n_lag))
+
+        
         row = 0
         for train_day in range(curr_day - n_train, curr_day):
             y_train[row,:] = load_weekday[train_day * T : train_day * T + T]
             X_train[row,0*T*n_lag:1*T*n_lag] = load_weekday[train_day * T - n_lag * T: train_day * T]
             row += 1
             
+        max_load = np.max(X_train)
+        min_load = np.min(X_train)    
         # building test data
         X_test = np.zeros((1, T * n_lag))
         X_test[0, 0*T*n_lag:1*T*n_lag] = load_weekday[curr_day*T - n_lag*T: curr_day*T]
         y_test = load_weekday[curr_day*T: curr_day *T + T]
         
-        X_train = X_train / max_load
-        y_train = y_train / max_load
-        X_test = X_test / max_load
-        y_test = y_test / max_load
+        X_train = (X_train-min_load) / (max_load - min_load)
+        y_train = (y_train-min_load) / (max_load - min_load)
+        X_test = (X_test-min_load) / (max_load - min_load)
+        #y_test = (y_test-min_load) / (max_load - min_load)
                 
 
         # training 
@@ -141,7 +146,7 @@ def NN_forecast(bld_name, n_train, n_lag, T):
         
         #y_ = prediction.eval(session = sess, feed_dict={xs: X_train})
         y_pred = prediction.eval(session = sess, feed_dict={xs: X_test})
-        
+        y_pred = y_pred * (max_load - min_load) + min_load
         # plot daily forecast
         '''
         xaxis = range(T)
